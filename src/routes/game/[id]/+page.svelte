@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { gameDetail$, settings$ } from '$lib/stores/app';
@@ -42,19 +41,26 @@
   let editHint = '';
   let currentExists = false;
 
-  onMount(() => {
-    const id = get(page).params.id as string;
-    const sub1 = gameDetail$(id).subscribe((v) => {
+  let detailSub: { unsubscribe(): void } | undefined;
+  let settingsSub: { unsubscribe(): void } | undefined;
+
+  function subscribeDetail(id: string) {
+    detailSub?.unsubscribe();
+    detailSub = gameDetail$(id).subscribe((v) => {
       detail = v;
       if (v && bookmarkDraft === null) bookmarkDraft = v.game.bookmark ?? '';
     });
-    const sub2 = settings$.subscribe((v) => {
+  }
+
+  $: if ($page.params.id) subscribeDetail($page.params.id);
+
+  onMount(() => {
+    settingsSub = settings$.subscribe((v) => {
       if (v) settings = v;
     });
-    void refreshCurrent(id);
     return () => {
-      sub1.unsubscribe();
-      sub2.unsubscribe();
+      detailSub?.unsubscribe();
+      settingsSub?.unsubscribe();
     };
   });
 

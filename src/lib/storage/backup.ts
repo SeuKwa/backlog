@@ -44,6 +44,8 @@ export async function importAll(
         await db.milestones.clear();
         await db.sessions.clear();
         await db.backtrackNotes.clear();
+        await db.platforms.clear();
+        await db.genres.clear();
       }
       await db.games.bulkPut(parsed.games);
       await db.milestones.bulkPut(parsed.milestones);

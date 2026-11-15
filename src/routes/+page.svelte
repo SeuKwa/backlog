@@ -36,13 +36,22 @@
     return matchesTab && matchesQuery;
   });
 
-  const TABS: { id: Tab; label: string; count?: () => number }[] = [
-    { id: 'active', label: 'Actifs', count: () => (counts['in_progress'] ?? 0) + (counts['todo'] ?? 0) },
-    { id: 'paused', label: 'En sommeil', count: () => counts['paused'] ?? 0 },
-    { id: 'finished', label: 'Terminés', count: () => (counts['completed'] ?? 0) + (counts['completed_100'] ?? 0) },
-    { id: 'dropped', label: 'Abandonnés', count: () => counts['dropped'] ?? 0 },
-    { id: 'all', label: 'Tout', count: () => games.length }
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'active', label: 'Actifs' },
+    { id: 'paused', label: 'En sommeil' },
+    { id: 'finished', label: 'Terminés' },
+    { id: 'dropped', label: 'Abandonnés' },
+    { id: 'all', label: 'Tout' }
   ];
+
+  let tabCounts: Record<Tab, number> = { active: 0, paused: 0, finished: 0, dropped: 0, all: 0 };
+  $: tabCounts = {
+    active: (counts['in_progress'] ?? 0) + (counts['todo'] ?? 0),
+    paused: counts['paused'] ?? 0,
+    finished: (counts['completed'] ?? 0) + (counts['completed_100'] ?? 0),
+    dropped: counts['dropped'] ?? 0,
+    all: games.length
+  };
 
   async function submit() {
     error = '';
@@ -79,7 +88,7 @@
 <div class="tabs" role="tablist">
   {#each TABS as t (t.id)}
     <button class:active={tab === t.id} on:click={() => (tab = t.id)}>
-      {t.label}{#if t.count && t.count() > 0} ({t.count()}){/if}
+      {t.label}{#if tabCounts[t.id] > 0} ({tabCounts[t.id]}){/if}
     </button>
   {/each}
 </div>
