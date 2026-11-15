@@ -3,6 +3,7 @@
   import { downloadText, exportAll, importAll } from '$lib/storage/backup';
   import { getSettings } from '$lib/storage/repositories';
   import { libraryToMarkdown } from '$lib/domain/export/markdown';
+  import { importPlayniteFile } from '$lib/services/playniteImport';
   import type { Milestone } from '$lib/domain/types';
 
   let message = '';
@@ -34,6 +35,21 @@
     const md = libraryToMarkdown(games, byGame, { respectFog: settings.exportRespectsFogOfWar });
     downloadText('backlog.md', md, 'text/markdown');
     flash('Export Markdown téléchargé.');
+  }
+
+  async function onPlayniteFile(ev: Event) {
+    const input = ev.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    error = '';
+    try {
+      const res = await importPlayniteFile(file.name, await file.text());
+      flash(`Playnite : ${res.total} jeu(x) lus — ${res.created} créé(s), ${res.updated} mis à jour.`);
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      input.value = '';
+    }
   }
 
   async function onImportFile(ev: Event) {
@@ -70,6 +86,18 @@
     <button class="btn primary" on:click={doExportJson}>⬇ Export JSON complet</button>
     <button class="btn" on:click={doExportMarkdown}>⬇ Export Markdown</button>
   </div>
+</div>
+
+<div class="panel">
+  <h2>Import Playnite</h2>
+  <p class="muted" style="font-size:.9rem;">
+    Export JSON (clé « games ») ou CSV de Playnite : crée les jeux manquants et met à jour temps de jeu,
+    plateformes et genres (correspondance par Id Playnite, sinon par titre).
+  </p>
+  <label class="field">
+    <span>Fichier Playnite (.json ou .csv)</span>
+    <input type="file" accept=".json,.csv,application/json,text/csv" on:change={onPlayniteFile} />
+  </label>
 </div>
 
 <div class="panel">

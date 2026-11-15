@@ -2,11 +2,13 @@ import Dexie, { type Table } from 'dexie';
 import type {
   AppSettings,
   BacktrackNote,
+  CoverRecord,
   Game,
   Genre,
   Milestone,
   Platform,
-  PlaySession
+  PlaySession,
+  SecretRecord
 } from '$lib/domain/types';
 
 export class BacklogDB extends Dexie {
@@ -17,6 +19,8 @@ export class BacklogDB extends Dexie {
   platforms!: Table<Platform, string>;
   genres!: Table<Genre, string>;
   settings!: Table<AppSettings, string>;
+  secrets!: Table<SecretRecord, string>;
+  covers!: Table<CoverRecord, string>;
 
   constructor() {
     super('backlog-db');
@@ -28,6 +32,10 @@ export class BacklogDB extends Dexie {
       platforms: 'id, name',
       genres: 'id, name',
       settings: 'id'
+    });
+    this.version(2).stores({
+      secrets: 'id',
+      covers: 'id'
     });
   }
 }

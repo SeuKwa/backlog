@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import '../app.css';
   import { page } from '$app/stores';
+  import { rehydrateCovers } from '$lib/storage/covers';
 
   $: path = $page.url.pathname;
+
+  onMount(() => {
+    void rehydrateCovers();
+  });
 </script>
 
 <header class="topbar">

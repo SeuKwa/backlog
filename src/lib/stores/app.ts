@@ -17,10 +17,11 @@ export function gameDetail$(id: string) {
   return liveQuery<GameDetail | undefined>(async () => {
     const game = await db.games.get(id);
     if (!game) return undefined;
-    const [milestones, sessions] = await Promise.all([
+    const [milestones, sessions, backtrackNotes] = await Promise.all([
       db.milestones.where('gameId').equals(id).toArray(),
-      db.sessions.where('gameId').equals(id).toArray()
+      db.sessions.where('gameId').equals(id).toArray(),
+      db.backtrackNotes.where('gameId').equals(id).toArray()
     ]);
-    return { game, milestones, sessions };
+    return { game, milestones, sessions, backtrackNotes };
   });
 }

@@ -99,12 +99,31 @@ export interface LlmSettings {
   apiKeyHandle: string; // handle WebCrypto, la clé n'est jamais stockée en clair
 }
 
+export interface MetadataSettings {
+  provider: 'igdb' | 'rawg';
+  apiKeyHandle?: string; // RAWG
+  clientIdHandle?: string; // IGDB (Twitch)
+  clientSecretHandle?: string; // IGDB (Twitch)
+}
+
 export interface AppSettings {
   id: 'singleton';
   fogOfWarEnabled: boolean;
   showRemainingTime: boolean;
   exportRespectsFogOfWar: boolean;
   llm?: LlmSettings;
+  metadata?: MetadataSettings;
+}
+
+export interface SecretRecord {
+  id: string;
+  iv: string; // base64
+  data: string; // base64 (AES-GCM)
+}
+
+export interface CoverRecord {
+  id: string; // gameId
+  blob: Blob;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {

@@ -79,6 +79,14 @@ const settingsSchema = z.object({
   exportRespectsFogOfWar: z.boolean().default(true),
   llm: z
     .object({ baseUrl: z.string(), model: z.string(), apiKeyHandle: z.string() })
+    .optional(),
+  metadata: z
+    .object({
+      provider: z.enum(['igdb', 'rawg']),
+      apiKeyHandle: z.string().optional(),
+      clientIdHandle: z.string().optional(),
+      clientSecretHandle: z.string().optional()
+    })
     .optional()
 });
 

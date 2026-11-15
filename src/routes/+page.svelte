@@ -2,8 +2,10 @@
   import { games$, statusCounts$ } from '$lib/stores/app';
   import GameCard from '$lib/ui/GameCard.svelte';
   import { createGame } from '$lib/storage/repositories';
+  import { createGameFromDraft, searchMetadata } from '$lib/services/metadata';
   import { EFFORT_LABELS, STATUS_LABELS, STATUS_ORDER } from '$lib/domain/game';
   import type { EffortTag, Game, GameStatus } from '$lib/domain/types';
+  import type { GameDraft } from '$lib/domain/ports';
 
   type Tab = 'active' | 'paused' | 'finished' | 'dropped' | 'all';
   let tab: Tab = 'active';
@@ -17,6 +19,40 @@
   let platforms = '';
   let genres = '';
   let releaseDate = '';
+
+  let showSearch = false;
+  let searchQuery = '';
+  let searching = false;
+  let searchError = '';
+  let searchResults: GameDraft[] = [];
+
+  async function doSearch() {
+    searchError = '';
+    if (!searchQuery.trim()) return;
+    searching = true;
+    try {
+      searchResults = await searchMetadata(searchQuery);
+      if (searchResults.length === 0) searchError = 'Aucun résultat.';
+    } catch (e) {
+      searchError = e instanceof Error ? e.message : String(e);
+    } finally {
+      searching = false;
+    }
+  }
+
+  async function pickResult(draft: GameDraft) {
+    searching = true;
+    try {
+      await createGameFromDraft(draft);
+      showSearch = false;
+      searchQuery = '';
+      searchResults = [];
+    } catch (e) {
+      searchError = e instanceof Error ? e.message : String(e);
+    } finally {
+      searching = false;
+    }
+  }
 
   $: games = ($games$ ?? []) as Game[];
   $: counts = $statusCounts$ ?? {};
@@ -81,6 +117,7 @@
   <h1>Bibliothèque</h1>
   <div style="display:flex; gap:.5rem; align-items:center; flex:1; max-width:420px;">
     <input type="search" placeholder="Rechercher un jeu…" bind:value={query} aria-label="Rechercher" />
+    <button class="btn" on:click={() => (showSearch = true)} title="Rechercher via IGDB/RAWG">🔎 Métadonnées</button>
     <button class="btn primary" on:click={() => (showForm = true)}>+ Ajouter</button>
   </div>
 </div>
@@ -104,6 +141,41 @@
     {#each filtered as g (g.id)}
       <GameCard game={g} />
     {/each}
+  </div>
+{/if}
+
+{#if showSearch}
+  <div class="modal-backdrop" on:click|self={() => (showSearch = false)} role="presentation">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Rechercher des métadonnées">
+      <h2>🔎 Rechercher un jeu (IGDB / RAWG)</h2>
+      {#if searchError}<div class="notice error">{searchError}</div>{/if}
+      <form on:submit|preventDefault={doSearch}>
+        <label class="field">
+          <span>Titre du jeu</span>
+          <input type="text" bind:value={searchQuery} placeholder="ex. : Hollow Knight" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" on:click={() => (showSearch = false)}>Fermer</button>
+          <button type="submit" class="btn primary" disabled={searching || !searchQuery.trim()}>
+            {searching ? 'Recherche…' : 'Rechercher'}
+          </button>
+        </div>
+      </form>
+      {#if searchResults.length > 0}
+        <div style="margin-top:.8rem; display:flex; flex-direction:column; gap:.4rem; max-height:50vh; overflow-y:auto;">
+          {#each searchResults as r (r.externalIds.igdb ?? r.externalIds.rawg ?? r.title)}
+            <button class="btn ghost" style="text-align:left; display:flex; gap:.6rem; align-items:center;" on:click={() => pickResult(r)} disabled={searching}>
+              {#if r.coverRemoteUrl}<img src={r.coverRemoteUrl} alt="" style="width:32px; height:42px; object-fit:cover; border-radius:4px;" />{/if}
+              <span>
+                <strong>{r.title}</strong>
+                {#if r.releaseDate}<span class="muted"> — {r.releaseDate}</span>{/if}
+                <br /><span class="muted" style="font-size:.8rem;">{r.platforms.join(', ')} · {r.genres.join(', ')}</span>
+              </span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 {/if}
 

@@ -244,6 +244,7 @@ label.field > span {
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent);
+  object-fit: cover;
 }
 
 .card-body {

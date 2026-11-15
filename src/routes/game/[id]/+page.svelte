@@ -6,14 +6,17 @@
   import MilestoneTimeline from '$lib/ui/MilestoneTimeline.svelte';
   import QuickCheckinBar from '$lib/ui/QuickCheckinBar.svelte';
   import {
+    addBacktrackNote,
     addMilestone,
     completeMilestone,
     deleteGame,
     deleteMilestone,
     getSettings,
+    resolveBacktrackNote,
     updateGame,
     updateMilestone
   } from '$lib/storage/repositories';
+  import { generateMilestoneDrafts } from '$lib/connectors/llm/generate';
   import {
     currentMilestone,
     quickCheckin,
@@ -25,7 +28,13 @@
   import { EFFORT_LABELS, STATUS_LABELS, STATUS_ORDER, isActive } from '$lib/domain/game';
   import { remainingHours } from '$lib/domain/estimates';
   import { gameToMarkdown, formatMinutes } from '$lib/domain/export/markdown';
-  import { DEFAULT_SETTINGS, type AppSettings, type GameStatus, type Milestone } from '$lib/domain/types';
+  import {
+    DEFAULT_SETTINGS,
+    type AppSettings,
+    type BacktrackTag,
+    type GameStatus,
+    type Milestone
+  } from '$lib/domain/types';
   import type { GameDetail } from '$lib/services/actions';
 
   let detail: GameDetail | undefined;
@@ -40,6 +49,23 @@
   let editLabel = '';
   let editHint = '';
   let currentExists = false;
+
+  type DraftItem = { label: string; hint: string; include: boolean };
+  let drafts: DraftItem[] | null = null;
+  let llmLoading = false;
+
+  let backtrackText = '';
+  let backtrackTag: BacktrackTag = 'other';
+
+  let hltbMain = '';
+  let hltbComp = '';
+  let hltbInit: string | null = null;
+
+  $: if (detail && hltbInit !== detail.game.id) {
+    hltbInit = detail.game.id;
+    hltbMain = detail.game.hltb?.mainHours != null ? String(detail.game.hltb.mainHours) : '';
+    hltbComp = detail.game.hltb?.completionistHours != null ? String(detail.game.hltb.completionistHours) : '';
+  }
 
   let detailSub: { unsubscribe(): void } | undefined;
   let settingsSub: { unsubscribe(): void } | undefined;
@@ -148,6 +174,55 @@
     goto('/');
   }
 
+  async function onGenerateLlm() {
+    if (!detail) return;
+    error = '';
+    llmLoading = true;
+    try {
+      const generated = await generateMilestoneDrafts(detail.game.title, detail.milestones.length);
+      drafts = generated.map((d) => ({ label: d.label, hint: d.hint ?? '', include: true }));
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      llmLoading = false;
+    }
+  }
+
+  async function onAddDrafts() {
+    if (!detail || !drafts) return;
+    error = '';
+    try {
+      for (const d of drafts) {
+        if (d.include && d.label.trim()) {
+          await addMilestone(detail.game.id, d.label, d.hint || undefined, 'llm');
+        }
+      }
+      drafts = null;
+      flash('Jalons ajoutés (source LLM, éditables comme les manuels).');
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function onAddBacktrack() {
+    if (!detail || !backtrackText.trim()) return;
+    await addBacktrackNote(detail.game.id, backtrackText, backtrackTag);
+    backtrackText = '';
+  }
+
+  async function onSaveHltb() {
+    if (!detail) return;
+    const main = Number(hltbMain);
+    const comp = Number(hltbComp);
+    await updateGame(detail.game.id, {
+      hltb: {
+        mainHours: Number.isFinite(main) && main > 0 ? main : undefined,
+        completionistHours: Number.isFinite(comp) && comp > 0 ? comp : undefined
+      }
+    });
+    flash('Durées de référence enregistrées.');
+  }
+
   async function exportMarkdown() {
     if (!detail) return;
     const s = await getSettings();
@@ -164,7 +239,11 @@
 {:else}
   <div class="panel">
     <div class="detail-head">
-      <div class="cover" aria-hidden="true">{detail.game.title.charAt(0).toUpperCase()}</div>
+      {#if detail.game.coverUrl}
+        <img class="cover cover-img" src={detail.game.coverUrl} alt="Jaquette de {detail.game.title}" />
+      {:else}
+        <div class="cover" aria-hidden="true">{detail.game.title.charAt(0).toUpperCase()}</div>
+      {/if}
       <div style="flex:1; min-width: 220px;">
         <h1>{detail.game.title}</h1>
         <div class="kv">
@@ -224,6 +303,11 @@
       </label>
     </div>
     <button class="btn primary sm" on:click={onAddMilestone} disabled={!newLabel.trim()}>+ Ajouter un jalon</button>
+    <div class="actions-row">
+      <button class="btn accent sm" on:click={onGenerateLlm} disabled={llmLoading}>
+        {llmLoading ? 'Génération…' : '✨ Générer des jalons (LLM)'}
+      </button>
+    </div>
 
     {#if editingId}
       <div class="modal-backdrop" on:click|self={() => (editingId = null)} role="presentation">
@@ -254,6 +338,95 @@
       on:blur={(ev) => updateGame(detail!.game.id, { personalNotes: (ev.currentTarget as HTMLTextAreaElement).value.trim() || undefined })}
     ></textarea>
   </section>
+
+  <section class="panel">
+    <h2>🗺️ Carnet de backtracking</h2>
+    {#if detail.backtrackNotes.length === 0}
+      <p class="muted">Aucune note. Ajoutez les lieux, coffres ou quêtes bloqués nécessitant une compétence future.</p>
+    {:else}
+      <ul style="list-style:none; margin:0 0 .8rem; padding:0; display:flex; flex-direction:column; gap:.4rem;">
+        {#each [...detail.backtrackNotes].sort((a, b) => Number(a.resolved) - Number(b.resolved)) as n (n.id)}
+          <li class="card" style="padding:.5rem .7rem; display:flex; gap:.6rem; align-items:center; justify-content:space-between;">
+            <span style={n.resolved ? 'text-decoration:line-through; color:var(--muted);' : ''}>
+              <span class="badge">{n.tag}</span> {n.text}
+            </span>
+            {#if !n.resolved}
+              <button class="btn sm primary" on:click={() => resolveBacktrackNote(n.id)}>Résolu ✓</button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    <div class="form-row">
+      <label class="field">
+        <span>Nouvelle note</span>
+        <input type="text" bind:value={backtrackText} placeholder="Coffre à clé rouge, donjon Est…" />
+      </label>
+      <label class="field">
+        <span>Type</span>
+        <select bind:value={backtrackTag}>
+          <option value="location">Lieu</option>
+          <option value="chest">Coffre</option>
+          <option value="quest">Quête</option>
+          <option value="other">Autre</option>
+        </select>
+      </label>
+    </div>
+    <button class="btn primary sm" on:click={onAddBacktrack} disabled={!backtrackText.trim()}>+ Ajouter</button>
+  </section>
+
+  <section class="panel">
+    <h2>⏳ Durées de référence (HLTB)</h2>
+    <div class="form-row">
+      <label class="field">
+        <span>Histoire principale (h)</span>
+        <input
+          type="number"
+          min="0"
+          step="0.5"
+          value={hltbMain}
+          on:input={(ev) => (hltbMain = (ev.currentTarget as HTMLInputElement).value)}
+          on:change={onSaveHltb}
+        />
+      </label>
+      <label class="field">
+        <span>Complétionniste (h)</span>
+        <input
+          type="number"
+          min="0"
+          step="0.5"
+          value={hltbComp}
+          on:input={(ev) => (hltbComp = (ev.currentTarget as HTMLInputElement).value)}
+          on:change={onSaveHltb}
+        />
+      </label>
+    </div>
+    <p class="muted" style="font-size:.85rem; margin:.2rem 0 0;">Sert à l'estimation du temps restant (option dans les paramètres).</p>
+  </section>
+
+  {#if drafts}
+    <div class="modal-backdrop" on:click|self={() => (drafts = null)} role="presentation">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Brouillon de jalons LLM" style="max-width:560px;">
+        <h2>✨ Jalons proposés par le LLM</h2>
+        <p class="muted" style="font-size:.85rem;">Anti-spoiler : vérifiez et éditez avant validation, rien n'est ajouté automatiquement.</p>
+        {#each drafts as d, i (i)}
+          <div style="display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.5rem;">
+            <input type="checkbox" bind:checked={d.include} style="width:20px; height:20px; margin-top:.45rem;" />
+            <div style="flex:1;">
+              <input type="text" bind:value={d.label} />
+              <input type="text" bind:value={d.hint} placeholder="Indice (optionnel)" style="margin-top:.3rem;" />
+            </div>
+          </div>
+        {/each}
+        <div class="modal-actions">
+          <button class="btn ghost" on:click={() => (drafts = null)}>Annuler</button>
+          <button class="btn primary" on:click={onAddDrafts} disabled={!drafts.some((d) => d.include)}>
+            Ajouter {drafts.filter((d) => d.include).length} jalon(s)
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   {#if isActive(detail.game)}
     <QuickCheckinBar

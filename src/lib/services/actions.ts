@@ -3,24 +3,30 @@ import {
   changeStatus,
   completeMilestone,
   getGame,
+  listBacktrackNotes,
   listMilestones,
   listSessions,
   updateGame
 } from '$lib/storage/repositories';
 import { sortedMilestones } from '$lib/domain/fog';
-import type { Game, GameStatus, Milestone, PlaySession } from '$lib/domain/types';
+import type { BacktrackNote, Game, GameStatus, Milestone, PlaySession } from '$lib/domain/types';
 
 export interface GameDetail {
   game: Game;
   milestones: Milestone[];
   sessions: PlaySession[];
+  backtrackNotes: BacktrackNote[];
 }
 
 export async function gameWithRelations(id: string): Promise<GameDetail | undefined> {
   const game = await getGame(id);
   if (!game) return undefined;
-  const [milestones, sessions] = await Promise.all([listMilestones(id), listSessions(id)]);
-  return { game, milestones, sessions };
+  const [milestones, sessions, backtrackNotes] = await Promise.all([
+    listMilestones(id),
+    listSessions(id),
+    listBacktrackNotes(id)
+  ]);
+  return { game, milestones, sessions, backtrackNotes };
 }
 
 export async function quickCheckin(gameId: string, minutes: 30 | 60): Promise<void> {

@@ -25,6 +25,18 @@ stores/     stores réactifs (liveQuery Dexie)
 ui/         composants
 ```
 
+## Fonctionnalités (Jalon 2)
+
+- **Métadonnées BYOK** : recherche IGDB (Client ID/Secret Twitch) ou RAWG (clé API) depuis la bibliothèque ;
+  la fiche est pré-remplie et la jaquette est téléchargée puis stockée en blob local (fonctionne offline).
+  Les identifiants sont chiffrés en AES-GCM (WebCrypto) dans IndexedDB.
+- **Génération LLM de jalons (BYOK)** : endpoint compatible OpenAI (Mistral/OpenRouter/…), prompt système
+  strict anti-spoiler, jalons proposés en **brouillon éditable** avant ajout (source `llm`).
+- **Import Playnite** (JSON `games` ou CSV) : crée/met à jour les jeux (temps de jeu, plateformes, genres).
+- **Carnet de backtracking** par jeu (lieux / coffres / quêtes bloqués, résolubles).
+- **Durées de référence HLTB** sur la fiche + estimation du temps restant (opt-in).
+- Hooks prévus pour Steam Web API / RetroAchievements (Jalon 3) derrière `domain/ports.ts`.
+
 ## Commandes
 
 ```bash

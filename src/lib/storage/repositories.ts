@@ -25,7 +25,7 @@ export function slug(s: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-async function ensureLookup<T extends { id: string; name: string }>(
+export async function ensureLookup<T extends { id: string; name: string }>(
   table: Table<T, string>,
   names: string[]
 ): Promise<string[]> {
@@ -51,6 +51,19 @@ export async function listGames(): Promise<Game[]> {
 
 export async function getGame(id: string): Promise<Game | undefined> {
   return db.games.get(id);
+}
+
+export async function findGameByPlayniteIdOrTitle(
+  playniteId: string | undefined,
+  title: string
+): Promise<Game | undefined> {
+  const games = await db.games.toArray();
+  if (playniteId) {
+    const byId = games.find((g) => g.externalIds.playniteId === playniteId);
+    if (byId) return byId;
+  }
+  const norm = title.trim().toLowerCase();
+  return games.find((g) => g.title.trim().toLowerCase() === norm);
 }
 
 export async function listMilestones(gameId: string): Promise<Milestone[]> {

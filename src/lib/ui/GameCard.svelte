@@ -7,7 +7,11 @@
 </script>
 
 <a class="card game-card" href="/game/{game.id}">
-  <div class="cover" aria-hidden="true">{game.title.charAt(0).toUpperCase()}</div>
+  {#if game.coverUrl}
+    <img class="cover cover-img" src={game.coverUrl} alt="Jaquette de {game.title}" />
+  {:else}
+    <div class="cover" aria-hidden="true">{game.title.charAt(0).toUpperCase()}</div>
+  {/if}
   <div class="card-body">
     <div class="card-title">{game.title}</div>
     <div class="card-meta">
