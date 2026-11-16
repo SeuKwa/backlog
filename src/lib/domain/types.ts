@@ -120,6 +120,10 @@ export interface PlaytimeSettings {
   raApiKeyHandle?: string;
 }
 
+export interface HltbSettings {
+  apiKeyHandle: string;
+}
+
 export interface AppSettings {
   id: 'singleton';
   fogOfWarEnabled: boolean;
@@ -128,6 +132,7 @@ export interface AppSettings {
   llm?: LlmSettings;
   metadata?: MetadataSettings;
   playtime?: PlaytimeSettings;
+  hltb?: HltbSettings;
 }
 
 export interface SecretRecord {

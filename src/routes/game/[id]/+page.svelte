@@ -19,6 +19,7 @@
   } from '$lib/storage/repositories';
   import { generateMilestoneDrafts } from '$lib/connectors/llm/generate';
   import { syncGamePlaytime } from '$lib/services/playtimeSync';
+  import { fillHltbForGame } from '$lib/services/hltb';
   import {
     currentMilestone,
     quickCheckin,
@@ -67,6 +68,7 @@
   let raIdInput = '';
   let linkInit: string | null = null;
   let syncing = false;
+  let hltbLoading = false;
 
   $: if (detail && hltbInit !== detail.game.id) {
     hltbInit = detail.game.id;
@@ -251,6 +253,26 @@
       error = e instanceof Error ? e.message : String(e);
     } finally {
       syncing = false;
+    }
+  }
+
+  async function onFetchHltb() {
+    if (!detail) return;
+    error = '';
+    hltbLoading = true;
+    try {
+      const est = await fillHltbForGame(detail.game.id, { overwrite: true });
+      if (est) {
+        hltbMain = est.mainHours != null ? String(est.mainHours) : '';
+        hltbComp = est.completionistHours != null ? String(est.completionistHours) : '';
+        flash('Durée HowLongToBeat récupérée.');
+      } else {
+        flash('Aucun résultat HLTB pour ce titre (clé configurée ?).');
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      hltbLoading = false;
     }
   }
 
@@ -483,7 +505,12 @@
         />
       </label>
     </div>
-    <p class="muted" style="font-size:.85rem; margin:.2rem 0 0;">Sert à l'estimation du temps restant (option dans les paramètres).</p>
+    <div class="actions-row">
+      <button class="btn accent sm" on:click={onFetchHltb} disabled={hltbLoading}>
+        {hltbLoading ? 'Recherche…' : '🔍 Rechercher la durée sur HowLongToBeat'}
+      </button>
+    </div>
+    <p class="muted" style="font-size:.85rem; margin:.2rem 0 0;">Sert à l'estimation du temps restant (option dans les paramètres). Remplie automatiquement à la création via IGDB/RAWG si la clé HLTB est configurée.</p>
   </section>
 
   {#if drafts}

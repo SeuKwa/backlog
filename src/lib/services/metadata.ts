@@ -2,6 +2,7 @@ import type { GameDraft } from '$lib/domain/ports';
 import { createMetadataProvider } from '$lib/connectors/metadata';
 import { createGame, getGame, getSettings, updateGame } from '$lib/storage/repositories';
 import { saveCoverFromUrl } from '$lib/storage/covers';
+import { fetchHltbForTitle } from '$lib/services/hltb';
 import type { Game } from '$lib/domain/types';
 
 export async function searchMetadata(query: string): Promise<GameDraft[]> {
@@ -26,6 +27,12 @@ export async function createGameFromDraft(draft: GameDraft): Promise<Game> {
     } catch {
       // jaquette indisponible, le jeu est créé sans
     }
+  }
+  try {
+    const est = await fetchHltbForTitle(draft.title);
+    if (est) await updateGame(game.id, { hltb: est });
+  } catch {
+    // HLTB non configuré ou indisponible, le jeu est créé sans durée estimée
   }
   const updated = await getGame(game.id);
   if (!updated) throw new Error('Jeu introuvable après création.');

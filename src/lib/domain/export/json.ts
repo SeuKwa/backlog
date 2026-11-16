@@ -98,7 +98,8 @@ const settingsSchema = z.object({
       raUsername: z.string().optional(),
       raApiKeyHandle: z.string().optional()
     })
-    .optional()
+    .optional(),
+  hltb: z.object({ apiKeyHandle: z.string() }).optional()
 });
 
 export const backlogExportSchema = z.object({

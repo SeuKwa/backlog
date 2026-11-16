@@ -41,6 +41,9 @@ ui/         composants
 - **Dashboard de stats** (`/stats`) : temps total, par mois / genre / plateforme / statut, jalons validés,
   durée moyenne de session — 100 % local, calcul pur dans `domain/stats.ts`.
 
+- **HowLongToBeat (BYOK)** : clé API HLTB en paramètres → à la création d'un jeu via IGDB/RAWG,
+  les durées (histoire principale / complétionniste) sont pré-remplies automatiquement ; bouton
+  « Rechercher la durée » sur la fiche pour (re)remplir manuellement.
 - **Synchro multi-appareils sans serveur** : package chiffré AES-256-GCM (PBKDF2 210k itérations, phrase de
   passe) en export/import `.json.enc` — transférez le fichier comme vous voulez, local-first préservé.
 

@@ -26,6 +26,8 @@
   let raUsername = '';
   let raApiKey = '';
 
+  let hltbKey = '';
+
   onMount(() => {
     const sub = settings$.subscribe(async (v) => {
       if (v) {
@@ -106,6 +108,18 @@
       steamApiKey = '';
       raApiKey = '';
       flash('Steam / RetroAchievements enregistrés (clés chiffrées localement).');
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function saveHltb() {
+    error = '';
+    try {
+      if (!hltbKey.trim()) throw new Error('Renseignez la clé API HowLongToBeat.');
+      await saveSettings({ hltb: { apiKeyHandle: await storeSecret(hltbKey.trim()) } });
+      hltbKey = '';
+      flash('HowLongToBeat enregistré (clé chiffrée localement). Durées de référence auto-remplies à la création via métadonnées.');
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }
@@ -235,6 +249,21 @@
   </label>
   <div class="actions-row">
     <button class="btn primary sm" on:click={saveLlm}>Enregistrer</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>HowLongToBeat (durées de référence auto)</h2>
+  <p class="muted" style="font-size:.9rem;">
+    Clé API HowLongToBeat (gratuite, à récupérer sur howlongtobeat.com). À la création d'un jeu via
+    IGDB/RAWG, la durée estimée (histoire principale / complétionniste) est alors renseignée automatiquement.
+  </p>
+  <label class="field">
+    <span>Clé API HowLongToBeat {settings.hltb?.apiKeyHandle ? '✓ configurée' : ''}</span>
+    <input type="password" bind:value={hltbKey} placeholder="la clé API HLTB" autocomplete="off" />
+  </label>
+  <div class="actions-row">
+    <button class="btn primary sm" on:click={saveHltb} disabled={!hltbKey.trim()}>Enregistrer</button>
   </div>
 </div>
 
