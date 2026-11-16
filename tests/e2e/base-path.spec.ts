@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('liens internes avec BASE_PATH=/backlog (project page GitHub Pages)', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/backlog/');
   await expect(page.getByRole('heading', { name: 'Bibliothèque' })).toBeVisible();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/backlog/favicon.svg');
 
@@ -23,7 +23,7 @@ test('liens internes avec BASE_PATH=/backlog (project page GitHub Pages)', async
   await expect(page.getByRole('heading', { name: 'Statistiques' })).toBeVisible();
   await expect(page).toHaveURL(/\/backlog\/stats$/);
 
-  await page.goto('/picker');
+  await page.goto('/backlog/picker');
   await expect(page.getByRole('heading', { name: /À quoi je joue ce soir/ })).toBeVisible();
   await expect(page).toHaveURL(/\/backlog\/picker$/);
 });

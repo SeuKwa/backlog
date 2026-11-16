@@ -19,7 +19,7 @@ export default defineConfig({
     {
       name: 'base-path',
       testMatch: 'base-path.spec.ts',
-      use: { baseURL: 'http://127.0.0.1:4174/backlog' }
+      use: { baseURL: 'http://127.0.0.1:4174' }
     }
   ]
 });
