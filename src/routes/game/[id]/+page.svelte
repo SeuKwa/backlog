@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { gameDetail$, settings$ } from '$lib/stores/app';
   import MilestoneTimeline from '$lib/ui/MilestoneTimeline.svelte';
   import QuickCheckinBar from '$lib/ui/QuickCheckinBar.svelte';
@@ -188,7 +189,7 @@
     if (!detail) return;
     if (!confirm(`Supprimer définitivement « ${detail.game.title} » et toutes ses données ?`)) return;
     await deleteGame(detail.game.id);
-    goto('/');
+    goto(`${base}/`);
   }
 
   async function onGenerateLlm() {
@@ -278,7 +279,7 @@
 </script>
 
 {#if !detail}
-  <div class="empty">Jeu introuvable. <a href="/" style="color:var(--accent)">Retour à la bibliothèque</a></div>
+  <div class="empty">Jeu introuvable. <a href="{base}/" style="color:var(--accent)">Retour à la bibliothèque</a></div>
 {:else}
   <div class="panel">
     <div class="detail-head">

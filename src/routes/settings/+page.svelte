@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { base } from '$app/paths';
   import { settings$ } from '$lib/stores/app';
   import { db } from '$lib/storage/db';
   import { getSettings, saveSettings } from '$lib/storage/repositories';
@@ -272,7 +273,7 @@
   <h2>Données</h2>
   <p class="muted" style="font-size:.9rem;">
     Toutes les données vivent uniquement dans ce navigateur (IndexedDB). Utilisez la page
-    <a href="/io" style="color:var(--accent)">Import / Export</a> pour sauvegarder ou restaurer un JSON complet.
+    <a href="{base}/io" style="color:var(--accent)">Import / Export</a> pour sauvegarder ou restaurer un JSON complet.
   </p>
   <button class="btn danger" on:click={resetAll}>
     {confirmReset ? '⚠️ Confirmer la suppression de TOUTES les données' : 'Supprimer toutes les données locales'}

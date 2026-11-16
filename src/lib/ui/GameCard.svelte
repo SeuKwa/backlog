@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import type { Game } from '$lib/domain/types';
   import { EFFORT_LABELS, STATUS_LABELS } from '$lib/domain/game';
   import { formatMinutes } from '$lib/domain/export/markdown';
@@ -6,7 +7,7 @@
   export let game: Game;
 </script>
 
-<a class="card game-card" href="/game/{game.id}">
+<a class="card game-card" href="{base}/game/{game.id}">
   {#if game.coverUrl}
     <img class="cover cover-img" src={game.coverUrl} alt="Jaquette de {game.title}" />
   {:else}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { games$ } from '$lib/stores/app';
   import { db } from '$lib/storage/db';
   import { pickCandidates, pickRandom } from '$lib/domain/picker';
@@ -59,7 +60,7 @@
 </div>
 
 {#if result}
-  <a class="card game-card" href="/game/{result.id}" style="display:flex;">
+  <a class="card game-card" href="{base}/game/{result.id}" style="display:flex;">
     <div class="cover" aria-hidden="true">{result.title.charAt(0).toUpperCase()}</div>
     <div class="card-body">
       <div class="card-title" style="font-size:1.1rem;">{result.title}</div>

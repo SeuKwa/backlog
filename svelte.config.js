@@ -2,6 +2,7 @@ import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const base = process.env.BASE_PATH ?? '';
+const outDir = process.env.OUT_DIR ?? 'build';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -9,8 +10,8 @@ const config = {
   kit: {
     paths: { base },
     adapter: adapter({
-      pages: 'build',
-      assets: 'build',
+      pages: outDir,
+      assets: outDir,
       fallback: '200.html',
       precompress: false,
       strict: true
