@@ -4,10 +4,16 @@
   import { getSettings } from '$lib/storage/repositories';
   import { libraryToMarkdown } from '$lib/domain/export/markdown';
   import { importPlayniteFile } from '$lib/services/playniteImport';
+  import { exportEncryptedPackage, importEncryptedPackage } from '$lib/services/sync';
   import type { Milestone } from '$lib/domain/types';
 
   let message = '';
   let error = '';
+
+  let syncPass = '';
+  let syncImportPass = '';
+  let encFileText = '';
+  let encFileName = '';
 
   function flash(msg: string) {
     message = msg;
@@ -49,6 +55,44 @@
       error = e instanceof Error ? e.message : String(e);
     } finally {
       input.value = '';
+    }
+  }
+
+  async function doExportEncrypted() {
+    error = '';
+    try {
+      const payload = await exportEncryptedPackage(syncPass);
+      const date = new Date().toISOString().slice(0, 10);
+      downloadText(`backlog-sync-${date}.json.enc`, payload, 'application/json');
+      syncPass = '';
+      flash('Package chiffré téléchargé — à transférer vous-même (clé USB, cloud perso, message…).');
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  function onEncFile(ev: Event) {
+    const input = ev.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    encFileName = file.name;
+    void file.text().then((t) => (encFileText = t));
+  }
+
+  async function doImportEncrypted() {
+    error = '';
+    if (!encFileText) {
+      error = 'Choisissez d’abord un fichier package chiffré.';
+      return;
+    }
+    try {
+      const res = await importEncryptedPackage(encFileText, syncImportPass);
+      syncImportPass = '';
+      encFileText = '';
+      encFileName = '';
+      flash(`Package déchiffré : ${res.games} jeu(x) importé(s) — bibliothèque remplacée.`);
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
     }
   }
 
@@ -98,6 +142,42 @@
     <span>Fichier Playnite (.json ou .csv)</span>
     <input type="file" accept=".json,.csv,application/json,text/csv" on:change={onPlayniteFile} />
   </label>
+</div>
+
+<div class="panel">
+  <h2>🔐 Package chiffré (synchro entre appareils, sans serveur)</h2>
+  <p class="muted" style="font-size:.9rem;">
+    Exporte toute la bibliothèque dans un fichier chiffré AES-256-GCM (PBKDF2, 210 000 itérations) protégé par
+    une phrase de passe. Le fichier ne peut être déchiffré qu’avec cette phrase : transférez-le comme vous voulez
+    (cloud perso, clé USB, message) puis importez-le sur l’autre appareil. <strong>L’import remplace la bibliothèque.</strong>
+  </p>
+  <div class="form-row">
+    <label class="field">
+      <span>Phrase de passe (8 caractères min.)</span>
+      <input type="password" bind:value={syncPass} placeholder="pour l’export chiffré" autocomplete="new-password" />
+    </label>
+  </div>
+  <div class="actions-row">
+    <button class="btn primary" on:click={doExportEncrypted} disabled={syncPass.length < 8}>
+      ⬇ Export chiffré (.json.enc)
+    </button>
+  </div>
+  <hr style="border-color:var(--border); margin:1rem 0;" />
+  <div class="form-row">
+    <label class="field">
+      <span>Fichier package (.json.enc)</span>
+      <input type="file" accept=".json.enc,.json,application/json" on:change={onEncFile} />
+    </label>
+    <label class="field">
+      <span>Phrase de passe</span>
+      <input type="password" bind:value={syncImportPass} placeholder="pour l’import chiffré" autocomplete="off" />
+    </label>
+  </div>
+  <div class="actions-row">
+    <button class="btn primary" on:click={doImportEncrypted} disabled={!encFileText || !syncImportPass}>
+      ⬆ Import chiffré{encFileName ? ` (${encFileName})` : ''}
+    </button>
+  </div>
 </div>
 
 <div class="panel">

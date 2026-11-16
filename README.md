@@ -41,6 +41,9 @@ ui/         composants
 - **Dashboard de stats** (`/stats`) : temps total, par mois / genre / plateforme / statut, jalons validés,
   durée moyenne de session — 100 % local, calcul pur dans `domain/stats.ts`.
 
+- **Synchro multi-appareils sans serveur** : package chiffré AES-256-GCM (PBKDF2 210k itérations, phrase de
+  passe) en export/import `.json.enc` — transférez le fichier comme vous voulez, local-first préservé.
+
 ## Commandes
 
 ```bash
