@@ -17,6 +17,7 @@
     updateMilestone
   } from '$lib/storage/repositories';
   import { generateMilestoneDrafts } from '$lib/connectors/llm/generate';
+  import { syncGamePlaytime } from '$lib/services/playtimeSync';
   import {
     currentMilestone,
     quickCheckin,
@@ -61,10 +62,24 @@
   let hltbComp = '';
   let hltbInit: string | null = null;
 
+  let steamAppIdInput = '';
+  let raIdInput = '';
+  let linkInit: string | null = null;
+  let syncing = false;
+
   $: if (detail && hltbInit !== detail.game.id) {
     hltbInit = detail.game.id;
     hltbMain = detail.game.hltb?.mainHours != null ? String(detail.game.hltb.mainHours) : '';
     hltbComp = detail.game.hltb?.completionistHours != null ? String(detail.game.hltb.completionistHours) : '';
+  }
+
+  $: if (detail && linkInit !== detail.game.id) {
+    linkInit = detail.game.id;
+    steamAppIdInput = detail.game.externalIds.steamAppId != null ? String(detail.game.externalIds.steamAppId) : '';
+    raIdInput =
+      detail.game.externalIds.retroachievementsId != null
+        ? String(detail.game.externalIds.retroachievementsId)
+        : '';
   }
 
   let detailSub: { unsubscribe(): void } | undefined;
@@ -208,6 +223,32 @@
     if (!detail || !backtrackText.trim()) return;
     await addBacktrackNote(detail.game.id, backtrackText, backtrackTag);
     backtrackText = '';
+  }
+
+  async function saveLinks() {
+    if (!detail) return;
+    const steam = Number(steamAppIdInput);
+    const ra = Number(raIdInput);
+    await updateGame(detail.game.id, {
+      externalIds: {
+        ...detail.game.externalIds,
+        steamAppId: Number.isFinite(steam) && steam > 0 ? steam : detail.game.externalIds.steamAppId,
+        retroachievementsId: Number.isFinite(ra) && ra > 0 ? ra : detail.game.externalIds.retroachievementsId
+      }
+    });
+  }
+
+  async function onSync() {
+    if (!detail) return;
+    error = '';
+    syncing = true;
+    try {
+      notice = await syncGamePlaytime(detail.game.id);
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      syncing = false;
+    }
   }
 
   async function onSaveHltb() {
@@ -373,6 +414,44 @@
       </label>
     </div>
     <button class="btn primary sm" on:click={onAddBacktrack} disabled={!backtrackText.trim()}>+ Ajouter</button>
+  </section>
+
+  <section class="panel">
+    <h2>🔗 Connecteurs externes (Steam / RetroAchievements)</h2>
+    <div class="form-row">
+      <label class="field">
+        <span>App ID Steam</span>
+        <input
+          type="number"
+          min="0"
+          value={steamAppIdInput}
+          on:input={(ev) => (steamAppIdInput = (ev.currentTarget as HTMLInputElement).value)}
+          on:change={saveLinks}
+          placeholder="renseigné auto via RAWG/IGDB"
+        />
+      </label>
+      <label class="field">
+        <span>ID RetroAchievements</span>
+        <input
+          type="number"
+          min="0"
+          value={raIdInput}
+          on:input={(ev) => (raIdInput = (ev.currentTarget as HTMLInputElement).value)}
+          on:change={saveLinks}
+        />
+      </label>
+    </div>
+    {#if detail.game.raProgress}
+      <p class="muted" style="font-size:.85rem;">
+        Succès RA : {detail.game.raProgress.earned}/{detail.game.raProgress.total}
+        (maj. {detail.game.raProgress.updatedAt.slice(0, 10)})
+      </p>
+    {/if}
+    <div class="actions-row">
+      <button class="btn accent sm" on:click={onSync} disabled={syncing}>
+        {syncing ? 'Synchronisation…' : '🔄 Synchroniser (Steam / RA)'}
+      </button>
+    </div>
   </section>
 
   <section class="panel">

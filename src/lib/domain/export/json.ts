@@ -31,6 +31,9 @@ const gameSchema = z.object({
   bookmark: z.string().optional(),
   externalIds: externalIdsSchema.default({}),
   hltb: hltbSchema.optional(),
+  raProgress: z
+    .object({ earned: z.number().int().min(0), total: z.number().int().min(0), updatedAt: iso })
+    .optional(),
   playtimeMinutes: z.number().min(0).default(0),
   lastPlayedAt: iso.optional(),
   createdAt: iso,
@@ -86,6 +89,14 @@ const settingsSchema = z.object({
       apiKeyHandle: z.string().optional(),
       clientIdHandle: z.string().optional(),
       clientSecretHandle: z.string().optional()
+    })
+    .optional(),
+  playtime: z
+    .object({
+      steamApiKeyHandle: z.string().optional(),
+      steamId: z.string().optional(),
+      raUsername: z.string().optional(),
+      raApiKeyHandle: z.string().optional()
     })
     .optional()
 });

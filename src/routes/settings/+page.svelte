@@ -20,6 +20,11 @@
   let llmModel = '';
   let llmKey = '';
 
+  let steamApiKey = '';
+  let steamId = '';
+  let raUsername = '';
+  let raApiKey = '';
+
   onMount(() => {
     const sub = settings$.subscribe(async (v) => {
       if (v) {
@@ -27,6 +32,8 @@
         metadataProvider = v.metadata?.provider ?? 'igdb';
         llmBaseUrl = v.llm?.baseUrl ?? 'https://api.mistral.ai/v1';
         llmModel = v.llm?.model ?? '';
+        steamId = v.playtime?.steamId ?? '';
+        raUsername = v.playtime?.raUsername ?? '';
       }
     });
     return () => sub.unsubscribe();
@@ -80,6 +87,24 @@
       });
       llmKey = '';
       flash('LLM enregistré (clé chiffrée localement, jamais envoyée ailleurs que vers baseUrl).');
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function savePlaytime() {
+    error = '';
+    try {
+      const current = await getSettings();
+      const p = { ...(current.playtime ?? {}) };
+      p.steamId = steamId.trim() || undefined;
+      p.raUsername = raUsername.trim() || undefined;
+      if (steamApiKey.trim()) p.steamApiKeyHandle = await storeSecret(steamApiKey.trim());
+      if (raApiKey.trim()) p.raApiKeyHandle = await storeSecret(raApiKey.trim());
+      await saveSettings({ playtime: p });
+      steamApiKey = '';
+      raApiKey = '';
+      flash('Steam / RetroAchievements enregistrés (clés chiffrées localement).');
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }
@@ -209,6 +234,37 @@
   </label>
   <div class="actions-row">
     <button class="btn primary sm" on:click={saveLlm}>Enregistrer</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Steam / RetroAchievements (BYOK)</h2>
+  <p class="muted" style="font-size:.9rem;">
+    Synchronise le temps de jeu Steam et les succès RetroAchievements sur les fiches liées
+    (appid Steam renseigné automatiquement via RAWG/IGDB quand disponible).
+  </p>
+  <div class="form-row">
+    <label class="field">
+      <span>Clé API Steam (Web API) {settings.playtime?.steamApiKeyHandle ? '✓ configurée' : ''}</span>
+      <input type="password" bind:value={steamApiKey} placeholder="laisser vide pour conserver" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>Steam ID (17 chiffres)</span>
+      <input type="text" bind:value={steamId} placeholder="765611980…" inputmode="numeric" />
+    </label>
+  </div>
+  <div class="form-row">
+    <label class="field">
+      <span>Nom d'utilisateur RA</span>
+      <input type="text" bind:value={raUsername} placeholder="votre pseudo RetroAchievements" />
+    </label>
+    <label class="field">
+      <span>Clé API RA (Web API) {settings.playtime?.raApiKeyHandle ? '✓ configurée' : ''}</span>
+      <input type="password" bind:value={raApiKey} placeholder="laisser vide pour conserver" autocomplete="off" />
+    </label>
+  </div>
+  <div class="actions-row">
+    <button class="btn primary sm" on:click={savePlaytime}>Enregistrer</button>
   </div>
 </div>
 

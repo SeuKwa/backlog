@@ -25,6 +25,12 @@ export interface HltbEstimate {
   completionistHours?: number;
 }
 
+export interface RaProgress {
+  earned: number;
+  total: number;
+  updatedAt: string;
+}
+
 export interface Game {
   id: UUID;
   title: string;
@@ -39,6 +45,7 @@ export interface Game {
   bookmark?: string; // marque-page de reprise, épinglée en haut de la fiche
   externalIds: ExternalIds;
   hltb?: HltbEstimate;
+  raProgress?: RaProgress;
   playtimeMinutes: number;
   lastPlayedAt?: string; // ISO 8601
   createdAt: string;
@@ -106,6 +113,13 @@ export interface MetadataSettings {
   clientSecretHandle?: string; // IGDB (Twitch)
 }
 
+export interface PlaytimeSettings {
+  steamApiKeyHandle?: string;
+  steamId?: string; // 17 chiffres, en clair (pas un secret)
+  raUsername?: string;
+  raApiKeyHandle?: string;
+}
+
 export interface AppSettings {
   id: 'singleton';
   fogOfWarEnabled: boolean;
@@ -113,6 +127,7 @@ export interface AppSettings {
   exportRespectsFogOfWar: boolean;
   llm?: LlmSettings;
   metadata?: MetadataSettings;
+  playtime?: PlaytimeSettings;
 }
 
 export interface SecretRecord {

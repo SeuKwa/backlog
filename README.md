@@ -35,7 +35,11 @@ ui/         composants
 - **Import Playnite** (JSON `games` ou CSV) : crée/met à jour les jeux (temps de jeu, plateformes, genres).
 - **Carnet de backtracking** par jeu (lieux / coffres / quêtes bloqués, résolubles).
 - **Durées de référence HLTB** sur la fiche + estimation du temps restant (opt-in).
-- Hooks prévus pour Steam Web API / RetroAchievements (Jalon 3) derrière `domain/ports.ts`.
+- **Hooks Steam Web API / RetroAchievements (BYOK)** (Jalon 3) : appid Steam extrait automatiquement des
+  métadonnées (RAWG `stores`, IGDB `external_games`), id RA saisissable sur la fiche ; bouton « Synchroniser »
+  → temps de jeu Steam (max local/Steam) et succès RA enregistrés sur la fiche. Clés chiffrées (AES-GCM).
+- **Dashboard de stats** (`/stats`) : temps total, par mois / genre / plateforme / statut, jalons validés,
+  durée moyenne de session — 100 % local, calcul pur dans `domain/stats.ts`.
 
 ## Commandes
 
@@ -44,6 +48,7 @@ npm install
 npm run dev      # développement
 npm run build    # build de prod (PWA) dans build/
 npm run check    # svelte-check
-npm test         # tests unitaires du domaine (vitest)
+npm test         # tests unitaires (vitest)
+npm run test:e2e # tests E2E Playwright (nécessite `npx playwright install chromium`)
 npm run icons    # régénère les icônes PNG du manifest
 ```

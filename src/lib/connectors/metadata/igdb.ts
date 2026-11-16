@@ -32,7 +32,14 @@ async function getToken(settings: AppSettings): Promise<{ token: string; clientI
   return { token: json.access_token, clientId };
 }
 
-const FIELDS = 'fields name, first_release_date, cover.image_id, platforms.name, genres.name;';
+const FIELDS =
+  'fields name, first_release_date, cover.image_id, platforms.name, genres.name, external_games.category, external_games.uid;';
+
+export function extractSteamAppId(row: Record<string, unknown>): number | undefined {
+  const ext = (row.external_games as { category: number; uid: number | string }[] | undefined) ?? [];
+  const steam = ext.find((e) => e.category === 1);
+  return steam ? Number(steam.uid) : undefined;
+}
 
 async function apiGames(settings: AppSettings, query: string): Promise<Record<string, unknown>[]> {
   const { token, clientId } = await getToken(settings);
@@ -48,6 +55,9 @@ async function apiGames(settings: AppSettings, query: string): Promise<Record<st
 function rowToDraft(row: Record<string, unknown>): GameDraft {
   const cover = row.cover as { image_id?: string } | undefined;
   const firstRelease = typeof row.first_release_date === 'number' ? row.first_release_date : undefined;
+  const externalIds: GameDraft['externalIds'] = { igdb: Number(row.id) };
+  const steamAppId = extractSteamAppId(row);
+  if (steamAppId != null) externalIds.steamAppId = steamAppId;
   return {
     title: String(row.name ?? ''),
     releaseDate: firstRelease ? new Date(firstRelease * 1000).toISOString().slice(0, 10) : undefined,
@@ -56,7 +66,7 @@ function rowToDraft(row: Record<string, unknown>): GameDraft {
     coverRemoteUrl: cover?.image_id
       ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${cover.image_id}.jpg`
       : undefined,
-    externalIds: { igdb: Number(row.id) }
+    externalIds
   };
 }
 

@@ -2,6 +2,18 @@ import type { AppSettings, ExternalIds, Game } from './types';
 
 export type { ExternalIds };
 
+export interface SyncResult {
+  source: 'steam' | 'retroachievements';
+  playtimeMinutes?: number;
+  achievements?: { earned: number; total: number };
+}
+
+export interface PlaytimeSource {
+  name: 'steam' | 'retroachievements';
+  isConfigured(settings: AppSettings): boolean;
+  syncGame(game: Game, settings: AppSettings): Promise<SyncResult | null>;
+}
+
 export interface GameDraft {
   title: string;
   releaseDate?: string;

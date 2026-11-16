@@ -557,6 +557,63 @@ label.field > span {
   margin-top: 0.8rem;
 }
 
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 0.9rem 0.5rem;
+  margin-bottom: 0;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.bar-label {
+  flex: 0 0 110px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  flex: 1;
+  height: 12px;
+  background: var(--panel-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  border-radius: 999px;
+}
+
+.bar-value {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+  min-width: 56px;
+  text-align: right;
+}
+
 @media (max-width: 560px) {
   .form-row {
     grid-template-columns: 1fr;

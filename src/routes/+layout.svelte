@@ -16,6 +16,7 @@
   <nav>
     <a href="/" class:active={path === '/'}>Bibliothèque</a>
     <a href="/picker" class:active={path === '/picker'}>🎲 Piocher</a>
+    <a href="/stats" class:active={path === '/stats'}>📊 Stats</a>
     <a href="/io" class:active={path === '/io'}>Import / Export</a>
     <a href="/settings" class:active={path === '/settings'} aria-label="Paramètres">⚙️</a>
   </nav>

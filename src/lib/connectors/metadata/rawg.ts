@@ -18,7 +18,17 @@ async function apiGet(settings: AppSettings, path: string): Promise<Record<strin
   return (await res.json()) as Record<string, unknown>;
 }
 
+export function extractSteamAppId(row: Record<string, unknown>): number | undefined {
+  const stores = (row.stores as { store?: { slug?: string }; url?: string }[] | undefined) ?? [];
+  const steam = stores.find((s) => s.store?.slug === 'steam' && typeof s.url === 'string');
+  const m = steam?.url?.match(/\/app\/(\d+)/);
+  return m ? Number(m[1]) : undefined;
+}
+
 function rowToDraft(row: Record<string, unknown>): GameDraft {
+  const externalIds: GameDraft['externalIds'] = { rawg: Number(row.id) };
+  const steamAppId = extractSteamAppId(row);
+  if (steamAppId != null) externalIds.steamAppId = steamAppId;
   return {
     title: String(row.name ?? ''),
     releaseDate: typeof row.released === 'string' ? row.released : undefined,
@@ -27,7 +37,7 @@ function rowToDraft(row: Record<string, unknown>): GameDraft {
     ),
     genres: ((row.genres as { name: string }[] | undefined) ?? []).map((g) => g.name),
     coverRemoteUrl: typeof row.background_image === 'string' ? row.background_image : undefined,
-    externalIds: { rawg: Number(row.id) }
+    externalIds
   };
 }
 
