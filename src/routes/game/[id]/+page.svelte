@@ -147,9 +147,11 @@
 
   async function onAddMilestone() {
     if (!detail || !newLabel.trim()) return;
-    await addMilestone(detail.game.id, newLabel, newHint);
+    const label = newLabel.trim();
+    const hint = newHint;
     newLabel = '';
     newHint = '';
+    await addMilestone(detail.game.id, label, hint);
   }
 
   function onEdit(id: string) {
