@@ -44,6 +44,18 @@ ui/         composants
 - **Synchro multi-appareils sans serveur** : package chiffré AES-256-GCM (PBKDF2 210k itérations, phrase de
   passe) en export/import `.json.enc` — transférez le fichier comme vous voulez, local-first préservé.
 
+## Déploiement GitHub Pages
+
+Un workflow `deploy.yml` déploie le build sur GitHub Pages à chaque push sur `main` :
+
+1. Rendre le dépôt **public** (Settings → Danger Zone) — Pages public exige un dépôt public
+   (sinon, Pages privé = plan payant).
+2. Settings → Pages → Source : **GitHub Actions**.
+3. Merger la PR contenant `deploy.yml` : le workflow build avec `BASE_PATH=/<nom-du-repo>`
+   (project page), copie `build/200.html` en `build/404.html` (fallback SPA) et publie.
+
+L'app est alors servie en statique ; les données restent 100 % locales (IndexedDB du navigateur).
+
 ## Commandes
 
 ```bash
