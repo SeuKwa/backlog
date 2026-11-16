@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 180_000,
   webServer: {
     command:
-      'npm run build && BASE_PATH=/backlog OUT_DIR=build-base npm run build && node scripts/serve-static.mjs build 4173 & node scripts/serve-static.mjs build-base 4174 /backlog & wait',
+      'npm run build && npm run build:base && (node scripts/serve-static.mjs build 4173 & node scripts/serve-static.mjs build-base 4174 /backlog & wait)',
     url: 'http://127.0.0.1:4173/',
     reuseExistingServer: !process.env.CI,
     timeout: 240_000

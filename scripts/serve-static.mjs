@@ -17,7 +17,11 @@ const types = {
 
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
-  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
+  if (base && p !== base && !p.startsWith(base + '/')) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' }).end('hors base');
+    return;
+  }
+  if (base) p = p.slice(base.length) || '/';
   let file = path.join(root, p);
   if (!file.startsWith(root)) {
     res.writeHead(403).end();
