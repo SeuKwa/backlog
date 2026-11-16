@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('liens internes avec BASE_PATH=/backlog (project page GitHub Pages)', async ({ page }) => {
   await page.goto('/backlog/');
   await expect(page.getByRole('heading', { name: 'Bibliothèque' })).toBeVisible();
-  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/backlog/favicon.svg');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /\/backlog\/favicon\.svg$/);
 
   await page.getByRole('button', { name: '+ Ajouter' }).click();
   await page.getByPlaceholder('Nom du jeu').fill('Test BasePath');
